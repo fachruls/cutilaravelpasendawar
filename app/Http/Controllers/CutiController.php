@@ -117,7 +117,7 @@ class CutiController extends Controller
             'alasan' => 'required',
             'tanggal_mulai' => 'required|date',
             'tanggal_selesai' => 'required|date|after_or_equal:tanggal_mulai',
-            'file_surat' => 'nullable|mimes:pdf,jpg,jpeg,png,doc,docx|max:5120', 
+            'file_surat' => 'nullable|mimes:pdf|max:5120',
             'atasan_langsung' => 'required',
             'pejabat_berwenang' => 'required',
             'alamat_selama_cuti' => 'required',

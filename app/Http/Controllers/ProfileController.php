@@ -7,7 +7,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
-use Illuminate\Support\Facades\Storage; // Wajib ada untuk fitur hapus/simpan file
+use Illuminate\Support\Facades\Storage; // Wajib ada untuk hapus file lama
 use Illuminate\View\View;
 
 class ProfileController extends Controller
@@ -24,11 +24,21 @@ class ProfileController extends Controller
 
     /**
      * Update the user's profile information.
+     * BAGIAN INI SUDAH DIAMANKAN DARI MASS ASSIGNMENT
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        $request->user()->fill($request->validated());
+        // === SECURITY FIX: MASS ASSIGNMENT PROTECTION ===
+        // Kita HANYA mengambil field yang aman untuk diupdate user biasa.
+        // Field 'role', 'jabatan', 'cuti_n' akan DIBUANG otomatis di sini.
+        // Hacker tidak bisa lagi mengubah jabatan sendiri.
+        
+        $safeData = $request->only(['name', 'email', 'no_hp', 'alamat']);
+        
+        // Masukkan data aman ke model user
+        $request->user()->fill($safeData);
 
+        // Jika email berubah, reset status verifikasi
         if ($request->user()->isDirty('email')) {
             $request->user()->email_verified_at = null;
         }
@@ -60,8 +70,7 @@ class ProfileController extends Controller
     }
 
     /**
-     * FITUR BARU: Upload Spesimen Tanda Tangan Digital
-     * Digunakan untuk penandatanganan otomatis surat cuti.
+     * Upload Spesimen Tanda Tangan Digital
      */
     public function uploadTtd(Request $request): RedirectResponse
     {
@@ -76,16 +85,15 @@ class ProfileController extends Controller
 
         $user = $request->user();
 
-        // 2. Hapus file lama jika ada (untuk menghemat storage)
+        // 2. Hapus file lama jika ada (Hemat Storage)
         if ($user->ttd_path && Storage::disk('public')->exists($user->ttd_path)) {
             Storage::disk('public')->delete($user->ttd_path);
         }
 
         // 3. Simpan file baru
-        // Nama file dibuat unik: ttd_user_{ID}_{TIMESTAMP}.png
         $filename = 'ttd_user_' . $user->id . '_' . time() . '.png';
         $path = $request->file('ttd_image')->storeAs(
-            'tanda_tangan_profil', // Folder tujuan di storage/app/public/
+            'tanda_tangan_profil', // Folder tujuan
             $filename, 
             'public'
         );
