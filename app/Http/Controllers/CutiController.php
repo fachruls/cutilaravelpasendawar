@@ -239,7 +239,7 @@ class CutiController extends Controller
     }
 
     /**
-     * 5. MEMBATALKAN PENGAJUAN CUTI
+     * 5. MEMBATALKAN PENGAJUAN CUTI a
      * Hanya bisa jika status belum diproses (Disetujui/Ditolak).
      */
     public function destroy($id)

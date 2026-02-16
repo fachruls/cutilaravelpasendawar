@@ -98,7 +98,7 @@ class ProfileController extends Controller
             'public'
         );
 
-        // 4. Update Database
+        // 4. Update Database ya
         $user->forceFill([
             'ttd_path' => $path
         ])->save();
