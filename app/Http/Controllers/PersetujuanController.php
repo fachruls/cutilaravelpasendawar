@@ -5,13 +5,14 @@ namespace App\Http\Controllers;
 use App\Models\Cuti;
 use App\Models\User;
 use App\Models\AuditLog;
+use App\Mail\NotifikasiCuti; 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail; 
 use Illuminate\Support\Facades\Storage;
 
 class PersetujuanController extends Controller
 {
-    // Helper: Cek apakah saya Plh dari User X?
     private function isPlhOf($original_user_id)
     {
         if (!$original_user_id) return false;
@@ -19,12 +20,10 @@ class PersetujuanController extends Controller
         return $original && $original->plh_id == Auth::id();
     }
 
-    // 1. DAFTAR CUTI (TAMPILAN ACC)
     public function index()
     {
         $user = Auth::user();
 
-        // Proteksi: Pegawai Biasa DILARANG MASUK
         $is_kasubag = $user->role == 'kasubag'; 
         $is_pimpinan = $user->role == 'pimpinan';
         $is_atasan = User::where('atasan_id', $user->id)->exists(); 
@@ -34,16 +33,13 @@ class PersetujuanController extends Controller
             abort(403, 'Anda tidak memiliki akses ke halaman persetujuan.');
         }
 
-        // Query Utama
         $persetujuan = Cuti::with('user')
             ->where(function($query) use ($user, $is_kasubag, $is_pimpinan) {
                 
-                // [TUGAS KASUBAG]
                 if ($is_kasubag) {
                     $query->orWhere('status', 'Menunggu Verifikasi');
                 }
 
-                // [TUGAS ATASAN]
                 $query->orWhere(function($subQ) use ($user) {
                     $subQ->where('status', 'Menunggu Atasan')
                          ->whereHas('user', function($u) use ($user) {
@@ -56,7 +52,6 @@ class PersetujuanController extends Controller
                          });
                 });
 
-                // [TUGAS PIMPINAN]
                 if ($is_pimpinan) {
                     $query->orWhere('status', 'Menunggu Pejabat');
                 }
@@ -67,7 +62,6 @@ class PersetujuanController extends Controller
         return view('pimpinan.persetujuan.index', compact('persetujuan'));
     }
 
-    // 2. PROSES SETUJU (ACC)
     public function setuju(Request $request, $id)
     {
         $cuti = Cuti::findOrFail($id);
@@ -75,46 +69,52 @@ class PersetujuanController extends Controller
         $is_plh_action = false;
         $pesan = '';
 
-        // TAHAP 1: KASUBAG KEPEGAWAIAN VERIFIKASI
+        $target_email = null;
+        $tipe_notif = '';
+
         if ($cuti->status == 'Menunggu Verifikasi' && $user->role == 'kasubag') {
             $cuti->update([
                 'status' => 'Menunggu Atasan', 
             ]);
             $pesan = "Verifikasi Berhasil. Dokumen diteruskan ke Atasan Langsung.";
             $action = 'VERIFIKASI_KASUBAG';
+
+            $atasan = User::find($cuti->user->atasan_id);
+            if ($atasan && $atasan->email) {
+                $target_email = $atasan->email;
+                $tipe_notif = 'atasan';
+            }
         }
         
-        // TAHAP 2: ATASAN LANGSUNG ACC
         elseif ($cuti->status == 'Menunggu Atasan') {
-            // Validasi: Apakah benar atasan dia?
             $atasan_asli_id = $cuti->user->atasan_id;
             if ($user->id != $atasan_asli_id && !$this->isPlhOf($atasan_asli_id)) {
                 abort(403, 'Anda bukan atasan langsung pegawai ini.');
             }
             if ($this->isPlhOf($atasan_asli_id)) $is_plh_action = true;
 
-            // --- [LOGIKA JALAN TOL KHUSUS KETUA] ---
             if ($user->role == 'pimpinan') {
-                // Jika yang ACC adalah KETUA (Pimpinan), langsung FINAL.
-                // Tidak perlu oper ke 'Menunggu Pejabat' lagi.
                 $cuti->update([
-                    'status' => 'Disetujui', // Langsung Finish
+                    'status' => 'Disetujui', 
                     'atasan_langsung' => $user->name,
-                    'pejabat_berwenang' => $user->name, // Ketua merangkap Pejabat
+                    'pejabat_berwenang' => $user->name, 
                     'is_plh_atasan' => $is_plh_action,
                     'is_plh_pejabat' => $is_plh_action,
                     'ttd_atasan' => $this->copyTtd($user, $id),
-                    'ttd_pejabat' => $this->copyTtd($user, $id), // TTD otomatis terisi di kolom pejabat juga
+                    'ttd_pejabat' => $this->copyTtd($user, $id), 
                     'catatan_atasan' => $request->catatan ?? 'Disetujui',
                     'catatan_pejabat' => $request->catatan ?? 'Disetujui',
                     'waktu_disetujui' => now(),
                 ]);
                 $pesan = "Disetujui Langsung oleh Ketua.";
                 $action = 'PERSETUJUAN_FINAL_BYPASS';
+
+                if ($cuti->user->email) {
+                    $target_email = $cuti->user->email;
+                    $tipe_notif = 'disetujui';
+                }
             } 
             else {
-                // --- [ALUR NORMAL: PEGAWAI BIASA] ---
-                // Atasan biasa oper ke Ketua
                 $cuti->update([
                     'status' => 'Menunggu Pejabat', 
                     'atasan_langsung' => $user->name,
@@ -124,10 +124,15 @@ class PersetujuanController extends Controller
                 ]);
                 $pesan = "Disetujui. Dokumen diteruskan ke Ketua.";
                 $action = 'PERSETUJUAN_ATASAN';
+
+                $ketua = User::where('role', 'pimpinan')->first();
+                if ($ketua && $ketua->email) {
+                    $target_email = $ketua->email;
+                    $tipe_notif = 'ketua';
+                }
             }
         }
 
-        // TAHAP 3: PIMPINAN (KETUA) ACC FINAL (Untuk Alur Normal)
         elseif ($cuti->status == 'Menunggu Pejabat') {
             if ($user->role != 'pimpinan' && !$this->isPlhOf(User::where('role','pimpinan')->value('id'))) {
                 abort(403, 'Hanya Ketua yang bisa menyetujui tahap akhir.');
@@ -144,12 +149,16 @@ class PersetujuanController extends Controller
             ]);
             $pesan = "Cuti RESMI DISETUJUI.";
             $action = 'PERSETUJUAN_FINAL';
+
+            if ($cuti->user->email) {
+                $target_email = $cuti->user->email;
+                $tipe_notif = 'disetujui';
+            }
         }
         else {
             abort(403, 'Aksi tidak valid untuk status ini.');
         }
 
-        // Catat Audit Log
         AuditLog::create([
             'user_id' => $user->id,
             'action' => $action,
@@ -158,10 +167,17 @@ class PersetujuanController extends Controller
             'user_agent' => $request->header('User-Agent'),
         ]);
 
+        if ($target_email && $tipe_notif) {
+            try {
+                Mail::to($target_email)->send(new NotifikasiCuti($cuti, $tipe_notif));
+            } catch (\Exception $e) {
+                \Log::error("Gagal kirim email notifikasi ($tipe_notif): " . $e->getMessage());
+            }
+        }
+
         return back()->with('success', $pesan);
     }
 
-    // Helper: Meng-copy Tanda Tangan
     private function copyTtd($user, $cutiId) {
         if ($user->ttd_path && Storage::disk('public')->exists($user->ttd_path)) {
             $ext = pathinfo($user->ttd_path, PATHINFO_EXTENSION);
@@ -172,7 +188,6 @@ class PersetujuanController extends Controller
         return null;
     }
 
-    // 3. PROSES TOLAK
     public function tolak(Request $request, $id)
     {
         $cuti = Cuti::findOrFail($id);
@@ -197,7 +212,6 @@ class PersetujuanController extends Controller
         }
         $cuti->update($updateData);
 
-        // KEMBALIKAN SALDO JIKA DITOLAK
         if ($cuti->jenis_cuti == 'Cuti Tahunan') {
             $pemohon = $cuti->user;
             $pemohon->cuti_n += $cuti->lama; 
@@ -211,6 +225,14 @@ class PersetujuanController extends Controller
             'ip_address' => $request->ip(),
             'user_agent' => $request->header('User-Agent'),
         ]);
+
+        try {
+            if ($cuti->user->email) {
+                Mail::to($cuti->user->email)->send(new NotifikasiCuti($cuti, 'ditolak'));
+            }
+        } catch (\Exception $e) {
+            \Log::error("Gagal kirim email penolakan: " . $e->getMessage());
+        }
         
         return back()->with('error', 'Pengajuan cuti Ditolak.');
     }
