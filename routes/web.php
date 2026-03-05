@@ -91,6 +91,7 @@ Route::middleware(['auth', 'role:pimpinan'])->prefix('pimpinan')->name('pimpinan
 Route::middleware(['auth', 'role:kasubag'])->prefix('kasubag')->name('kasubag.')->group(function () {
     // Kasubag akses dashboard logic yg sama
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/rekap-cuti', [App\Http\Controllers\PersetujuanController::class, 'rekap'])->name('rekap');
 });
 
 

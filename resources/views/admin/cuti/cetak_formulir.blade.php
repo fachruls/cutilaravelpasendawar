@@ -74,6 +74,7 @@
     </style>
 </head>
 <body onload="window.print()">
+    <?php \Carbon\Carbon::setLocale('id'); ?>
 
     <div class="header-lampiran">
         LAMPIRAN II<br>
@@ -91,7 +92,7 @@
     <div style="clear: both;"></div>
 
     <div class="judul-form">FORMULIR PERMINTAAN DAN PEMBERIAN CUTI</div>
-    <div class="nomor-form">Nomor : ..............................................</div>
+    <div style="text-align: center; margin-bottom: 5px;">NOMOR : &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;/KPA.W17-A12/KP5.3/&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;/2026</div>
 
     <table>
         <tr><td colspan="4" class="text-bold">I. DATA PEGAWAI</td></tr>
@@ -164,9 +165,9 @@
             <td width="15%">Selama</td>
             <td width="20%">{{ $cuti->lama_hari_kerja ?? $cuti->lama }} Hari Kerja</td>
             <td width="15%">Mulai Tanggal</td>
-            <td width="20%">{{ \Carbon\Carbon::parse($cuti->tanggal_mulai)->format('d-m-Y') }}</td>
+            <td width="20%">{{ \Carbon\Carbon::parse($cuti->tanggal_mulai)->translatedFormat('d F Y') }}</td>
             <td width="5%">s.d</td>
-            <td width="25%">{{ \Carbon\Carbon::parse($cuti->tanggal_selesai)->format('d-m-Y') }}</td>
+            <td width="25%">{{ \Carbon\Carbon::parse($cuti->tanggal_selesai)->translatedFormat('d F Y') }}</td>
         </tr>
     </table>
 
@@ -186,7 +187,12 @@
             <td>3. CUTI SAKIT</td>
             <td rowspan="4" class="valign-middle text-center"></td>
         </tr>
-        @php $tahun = date('Y'); @endphp
+       @php 
+            $tahun = date('Y'); 
+            $kuota_awal = $sisa_cuti_tahunan ?? 12;
+            $jumlah_diambil = ($cuti->jenis_cuti == 'Cuti Tahunan') ? ($cuti->lama_hari_kerja ?? $cuti->lama) : 0;
+            $sisa_aktual = $kuota_awal - $jumlah_diambil;
+        @endphp
         <tr>
             <td class="text-center">{{ $tahun - 2 }}</td><td class="text-center">0</td><td></td>
             <td>4. CUTI MELAHIRKAN</td>
@@ -196,7 +202,7 @@
             <td>5. CUTI KARENA ALASAN PENTING</td>
         </tr>
         <tr>
-            <td class="text-center">{{ $tahun }}</td><td class="text-center">{{ $sisa_cuti_tahunan ?? 12 }}</td><td></td>
+            <td class="text-center">{{ $tahun }}</td><td class="text-center">{{ $sisa_aktual }}</td><td></td>
             <td>6. CUTI DILUAR TANGGUNGAN NEGARA</td>
         </tr>
     </table>
@@ -286,6 +292,15 @@
             </td>
         </tr>
     </table>
+    <div style="font-size: 9pt; margin-top: 5px;">
+        <span class="bold">Catatan:</span><br>
+        * Coret yang tidak perlu / tidak digunakan<br>
+        ** Pilih salah satu dengan memberi tanda centang (V)<br>
+        *** Diisi oleh pejabat yang menangani bidang kepegawaian sebelum pejabat yang berwenang menetapkan keputusan<br>
+        **** Tuliskan alasan penangguhan / perubahan / penolakan
+    </div>                                               
+
+</div>
 
 </body>
 </html>

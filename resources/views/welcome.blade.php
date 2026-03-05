@@ -11,9 +11,9 @@
 
     <style>
         :root {
-            --primary: #107c41;       /* Hijau Mahkamah Agung */
+            --primary: #107c41;       
             --primary-dark: #0a502a;
-            --accent: #facc15;        /* Kuning Emas */
+            --accent: #facc15;        
             --text-dark: #1e293b;
             --text-grey: #64748b;
             --bg-light: #f8fafc;
@@ -148,7 +148,7 @@
         <div class="container hero-content">
             <div class="row align-items-center">
                 <div class="col-lg-6">
-                    <span class="hero-badge"><i class="fas fa-bolt me-2"></i>Versi 1.0 (Terbaru)</span>
+                    <span class="hero-badge"><i class="fas fa-bolt me-2"></i>Versi 1.0</span>
                     <h1 class="hero-title">Pengajuan Cuti Digital & Terintegrasi.</h1>
                     <p class="hero-desc">Sistem Informasi Manajemen Cuti Pegawai Pengadilan Agama Sendawar. Solusi pengajuan cuti yang cepat, transparan, dan dapat diakses dari mana saja.</p>
                     <div class="d-flex gap-3">
@@ -157,21 +157,6 @@
                         @else
                             <a href="{{ route('login') }}" class="btn btn-login btn-lg px-5">Ajukan Cuti Sekarang</a>
                         @endauth
-                    </div>
-                    
-                    <div class="mt-5 d-flex gap-4">
-                        <div>
-                            <h4 class="fw-bold mb-0 text-dark">100%</h4>
-                            <small class="text-muted">Paperless</small>
-                        </div>
-                        <div>
-                            <h4 class="fw-bold mb-0 text-dark">24/7</h4>
-                            <small class="text-muted">Akses Online</small>
-                        </div>
-                        <div>
-                            <h4 class="fw-bold mb-0 text-dark">Fast</h4>
-                            <small class="text-muted">Approval</small>
-                        </div>
                     </div>
                 </div>
                 <div class="col-lg-6 d-none d-lg-block text-center">
@@ -208,7 +193,7 @@
                             <i class="fas fa-calculator"></i>
                         </div>
                         <h5>Smart Calculation</h5>
-                        <p>Tidak perlu hitung manual! Sistem otomatis mendeteksi hari libur nasional dan akhir pekan, memastikan kuota cuti terpotong secara adil.</p>
+                        <p>Tidak perlu hitung manual! Sistem otomatis mendeteksi hari libur nasional dan akhir pekan dan juga otomatis menambahkan cuti yang tidak terpakai tahun lalu memastikan kuota cuti terpotong secara adil.</p>
                     </div>
                 </div>
 
@@ -277,7 +262,7 @@
                 <div class="col-md-3 mb-4">
                     <h6 class="fw-bold mb-3 text-white">Kontak Kami</h6>
                     <div class="footer-links">
-                        <a href="#"><i class="fas fa-phone me-2"></i>+62-82253551790</a>
+                        <a href="https://wa.me/6282253551790"><i class="fas fa-phone me-2"></i>+62-82253551790</a>
                         <a href="#"><i class="fas fa-envelope me-2"></i> pengadilanagamasendawar@gmail.com</a>
                     </div>
                 </div>

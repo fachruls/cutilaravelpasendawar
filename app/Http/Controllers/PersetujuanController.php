@@ -24,8 +24,12 @@ class PersetujuanController extends Controller
     {
         $user = Auth::user();
 
-        $is_kasubag = $user->role == 'kasubag'; 
-        $is_pimpinan = $user->role == 'pimpinan';
+        // LOGIKA BARU: Mengenali PLH Kasubag
+        $kasubag_asli = User::where('role', 'kasubag')->first();
+        $is_kasubag = $user->role == 'kasubag' || ($kasubag_asli && $this->isPlhOf($kasubag_asli->id)); 
+        
+       $pimpinan_asli = User::where('role', 'pimpinan')->first();
+        $is_pimpinan = $user->role == 'pimpinan' || ($pimpinan_asli && $this->isPlhOf($pimpinan_asli->id));
         $is_atasan = User::where('atasan_id', $user->id)->exists(); 
         $is_plh    = User::where('plh_id', $user->id)->exists(); 
 
@@ -72,7 +76,9 @@ class PersetujuanController extends Controller
         $target_email = null;
         $tipe_notif = '';
 
-        if ($cuti->status == 'Menunggu Verifikasi' && $user->role == 'kasubag') {
+        // LOGIKA BARU: PLH Kasubag bisa menyetujui
+        $kasubag_asli = User::where('role', 'kasubag')->first();
+        if ($cuti->status == 'Menunggu Verifikasi' && ($user->role == 'kasubag' || ($kasubag_asli && $this->isPlhOf($kasubag_asli->id)))) {
             $cuti->update([
                 'status' => 'Menunggu Atasan', 
             ]);
@@ -193,7 +199,9 @@ class PersetujuanController extends Controller
         $cuti = Cuti::findOrFail($id);
         $user = Auth::user();
 
-        $has_access = ($cuti->status == 'Menunggu Verifikasi' && $user->role == 'kasubag') || 
+        // LOGIKA BARU: PLH Kasubag bisa menolak
+        $kasubag_asli = User::where('role', 'kasubag')->first();
+        $has_access = ($cuti->status == 'Menunggu Verifikasi' && ($user->role == 'kasubag' || ($kasubag_asli && $this->isPlhOf($kasubag_asli->id)))) || 
                       ($cuti->status == 'Menunggu Atasan' && ($user->id == $cuti->user->atasan_id || $this->isPlhOf($cuti->user->atasan_id))) ||
                       ($cuti->status == 'Menunggu Pejabat' && ($user->role == 'pimpinan' || $this->isPlhOf(User::where('role','pimpinan')->value('id'))));
 
@@ -235,5 +243,17 @@ class PersetujuanController extends Controller
         }
         
         return back()->with('error', 'Pengajuan cuti Ditolak.');
+    }
+    
+    public function rekap()
+    {
+        // Menarik semua data cuti yang sudah sah disetujui
+        $data_cuti = Cuti::with('user')
+            ->where('status', 'Disetujui')
+            ->orderBy('updated_at', 'desc')
+            ->get();
+
+        // Melempar tumpukan data tersebut ke halaman tampilan
+        return view('rekap', compact('data_cuti'));
     }
 }

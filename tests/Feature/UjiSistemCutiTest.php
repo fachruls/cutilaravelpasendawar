@@ -141,4 +141,43 @@ class UjiSistemCutiTest extends TestCase
             'pejabat_berwenang' => $ketua->name // Pastikan kolom ini terisi
         ]);
     }
+
+    // 4. TES PERINTAH OTOMATIS: PEMBARUAN SISA CUTI TAHUNAN (ATURAN BKN)
+    public function test_perintah_pembaruan_sisa_cuti_berjalan_sesuai_aturan()
+    {
+        // Aktor 1: Pegawai yang sisa cutinya banyak (harus dipotong maksimal 6)
+        $pegawai_sisa_banyak = User::factory()->create([
+            'role' => 'pegawai',
+            'hak_cuti_tahunan' => 12,
+            'cuti_n' => 10,  
+            'cuti_n1' => 8,  
+            'cuti_n2' => 0,
+        ]);
+
+        // Aktor 2: Pegawai yang sisa cutinya sedikit (tidak boleh dipotong)
+        $pegawai_sisa_sedikit = User::factory()->create([
+            'role' => 'pegawai',
+            'hak_cuti_tahunan' => 12,
+            'cuti_n' => 4,   
+            'cuti_n1' => 2,  
+            'cuti_n2' => 0,
+        ]);
+
+        // Eksekusi perintah artisan update sisa cuti
+        $this->artisan('cuti:update')->assertSuccessful();
+
+        // Segarkan data dari database
+        $pegawai_sisa_banyak->refresh();
+        $pegawai_sisa_sedikit->refresh();
+
+        // Validasi Aktor 1: Pastikan pemotongan maksimal 6 hari berfungsi
+        $this->assertEquals(6, $pegawai_sisa_banyak->cuti_n2);
+        $this->assertEquals(6, $pegawai_sisa_banyak->cuti_n1);
+        $this->assertEquals(12, $pegawai_sisa_banyak->cuti_n);
+
+        // Validasi Aktor 2: Pastikan sisa di bawah 6 hari tidak terpotong
+        $this->assertEquals(2, $pegawai_sisa_sedikit->cuti_n2);
+        $this->assertEquals(4, $pegawai_sisa_sedikit->cuti_n1);
+        $this->assertEquals(12, $pegawai_sisa_sedikit->cuti_n);
+    }
 }

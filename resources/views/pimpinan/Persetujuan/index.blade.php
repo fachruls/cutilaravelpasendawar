@@ -81,8 +81,11 @@
                                                     $perlu_persetujuan = false;
                                                     $user_login = Auth::user();
 
-                                                    // --- [LOGIKA BARU]: KASUBAG ---
-                                                    if ($item->status == 'Menunggu Verifikasi' && $user_login->role == 'kasubag') {
+                                                    // --- [LOGIKA BARU]: KASUBAG & PLH ---
+                                                    $kasubag_asli = \App\Models\User::where('role', 'kasubag')->first();
+                                                    $is_plh_kasubag = $kasubag_asli && $kasubag_asli->plh_id == $user_login->id;
+
+                                                    if ($item->status == 'Menunggu Verifikasi' && ($user_login->role == 'kasubag' || $is_plh_kasubag)) {
                                                         $perlu_persetujuan = true;
                                                     }
 
@@ -115,8 +118,8 @@
                                                         @method('PUT')
                                                         <button type="submit" class="btn btn-success btn-sm" onclick="return confirm('Apakah Anda yakin ingin memproses data ini?')">
                                                             <i class="fas fa-check"></i> 
-                                                            {{-- Ubah teks tombol sesuai role --}}
-                                                            {{ $user_login->role == 'kasubag' ? 'Verifikasi' : 'Setujui' }}
+                                                            {{-- Ubah teks tombol sesuai status cuti agar akurat untuk PLH --}}
+                                                            {{ $item->status == 'Menunggu Verifikasi' ? 'Verifikasi' : 'Setujui' }}
                                                         </button>
                                                     </form>
                                                     
