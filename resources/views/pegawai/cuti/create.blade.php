@@ -79,14 +79,12 @@
     <div class="row justify-content-center">
         <div class="col-lg-10">
             
-            <div class="d-flex align-items-center mb-4 mt-3">
-                <div class="bg-white p-3 rounded-circle shadow-sm me-3">
-                    <i class="fas fa-file-signature fa-2x text-success"></i>
-                </div>
-                <div>
-                    <h4 class="fw-bold m-0">Form Pengajuan Cuti</h4>
-                    <p class="text-muted m-0 small">Lengkapi data di bawah ini untuk mengajukan cuti.</p>
-                </div>
+            <div style="background: linear-gradient(135deg, #107c41 0%, #0a5c30 50%, #064020 100%); border-radius: 20px; padding: 28px 32px; color: white; position: relative; overflow: hidden; margin-bottom: 24px; box-shadow: 0 8px 30px rgba(16, 124, 65, 0.25);">
+                <div style="position: absolute; top: -40px; right: -40px; width: 180px; height: 180px; border-radius: 50%; background: rgba(255,255,255,0.06);"></div>
+                <div style="position: absolute; bottom: -30px; right: 100px; width: 120px; height: 120px; border-radius: 50%; background: rgba(255,255,255,0.04);"></div>
+                <i class="fas fa-file-signature" style="position: absolute; right: 30px; top: 50%; transform: translateY(-50%); font-size: 4rem; opacity: 0.1;"></i>
+                <h4 class="fw-bold m-0" style="position: relative; z-index: 1;"><i class="fas fa-file-signature me-2"></i>Form Pengajuan Cuti</h4>
+                <p class="m-0 mt-1" style="opacity: 0.85; position: relative; z-index: 1;">Lengkapi data di bawah ini untuk mengajukan cuti.</p>
             </div>
 
             @if($errors->any())

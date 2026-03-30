@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>{{ config('app.name', 'Sistem Cuti PA Sendawar') }}</title>
+    <link rel="icon" type="image/png" href="{{ asset('assets/img/logo.png') }}">
     
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
@@ -34,12 +35,12 @@
             overflow-x: hidden; 
         }
         
-        /* --- HEADER --- */
+        /* --- HEADER (Premium Gradient) --- */
         .header { 
-            background: var(--primary-gradient); 
+            background: linear-gradient(135deg, #0d9e4f 0%, #107c41 30%, #0a5c30 70%, #064020 100%);
             color: white; 
             padding: 18px 30px; 
-            box-shadow: var(--shadow-md); 
+            box-shadow: 0 4px 20px rgba(10, 92, 48, 0.3); 
             position: sticky; 
             top: 0; 
             z-index: 100; 
@@ -49,6 +50,17 @@
             border-bottom-left-radius: 20px;
             border-bottom-right-radius: 20px;
             margin-bottom: 25px;
+            overflow: hidden;
+        }
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(ellipse at 30% 50%, rgba(255,255,255,0.06) 0%, transparent 70%);
+            pointer-events: none;
         }
         
         .header-content { display: flex; align-items: center; gap: 15px; }

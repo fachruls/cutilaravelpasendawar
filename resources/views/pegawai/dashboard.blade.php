@@ -1,16 +1,108 @@
 @extends('layouts.app')
 
 @section('content')
+<style>
+    /* ====== GREETING CARD (sama persis dg admin) ====== */
+    .greeting-card {
+        background: linear-gradient(135deg, #107c41 0%, #0a5c30 50%, #064020 100%);
+        border-radius: 20px;
+        padding: 30px 35px;
+        color: white;
+        position: relative;
+        overflow: hidden;
+        margin-bottom: 28px;
+        box-shadow: 0 8px 30px rgba(16, 124, 65, 0.25);
+    }
+    .greeting-card::before {
+        content: '';
+        position: absolute;
+        top: -40px; right: -40px;
+        width: 200px; height: 200px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.06);
+    }
+    .greeting-card::after {
+        content: '';
+        position: absolute;
+        bottom: -50px; right: 80px;
+        width: 160px; height: 160px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.04);
+    }
+    .greeting-card h3 { font-weight: 700; font-size: 1.5rem; margin-bottom: 6px; position: relative; z-index: 1; }
+    .greeting-card p { opacity: 0.85; margin: 0; font-size: 0.95rem; position: relative; z-index: 1; }
+    .greeting-card .greeting-date {
+        position: relative; z-index: 1;
+        display: inline-flex; align-items: center;
+        background: rgba(255,255,255,0.15);
+        padding: 6px 16px; border-radius: 50px;
+        font-size: 0.8rem; margin-top: 12px;
+        backdrop-filter: blur(5px);
+    }
 
-<div class="d-flex align-items-center justify-content-between mb-4">
-    <div>
-        <h4 class="fw-bold text-dark mb-1">Dashboard Pegawai</h4>
-        <p class="text-muted mb-0">Selamat datang kembali, <span class="text-primary fw-semibold">{{ Auth::user()->name }}</span>!</p>
-    </div>
-    <div class="d-none d-md-block">
-        <span class="badge bg-white text-secondary shadow-sm py-2 px-3 border">
-            <i class="fas fa-calendar-alt me-2 text-primary"></i> {{ \Carbon\Carbon::now()->translatedFormat('l, d F Y') }}
-        </span>
+    /* ====== STAT CARDS PEGAWAI - Premium ====== */
+    .pegawai-stat {
+        border-radius: 16px;
+        color: white;
+        position: relative;
+        overflow: hidden;
+        transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.12);
+        border: none;
+    }
+    .pegawai-stat::before {
+        content: '';
+        position: absolute;
+        top: -30px; right: -30px;
+        width: 120px; height: 120px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.1);
+        transition: transform 0.4s ease;
+    }
+    .pegawai-stat::after {
+        content: '';
+        position: absolute;
+        bottom: -20px; left: -20px;
+        width: 80px; height: 80px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.06);
+    }
+    .pegawai-stat:hover {
+        transform: translateY(-8px) scale(1.02);
+        box-shadow: 0 12px 35px rgba(0,0,0,0.2);
+    }
+    .pegawai-stat:hover::before { transform: scale(1.5); }
+    .pegawai-stat .stat-icon-bg { 
+        position: absolute; font-size: 5rem; top: 10px; right: -20px; opacity: 0.12; z-index: 0;
+        transition: opacity 0.3s, transform 0.3s;
+    }
+    .pegawai-stat:hover .stat-icon-bg { opacity: 0.2; transform: rotate(-10deg) scale(1.1); }
+
+    /* Entrance animation */
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    .animate-in { animation: fadeInUp 0.5s ease-out forwards; }
+    .animate-in:nth-child(1) { animation-delay: 0.05s; }
+    .animate-in:nth-child(2) { animation-delay: 0.1s; }
+    .animate-in:nth-child(3) { animation-delay: 0.15s; }
+    .animate-in:nth-child(4) { animation-delay: 0.2s; }
+</style>
+
+{{-- ============================================================ --}}
+{{-- GREETING CARD --}}
+{{-- ============================================================ --}}
+@php
+    $hour = (int) date('H');
+    if ($hour >= 5 && $hour < 11) $salam = 'Selamat Pagi';
+    elseif ($hour >= 11 && $hour < 15) $salam = 'Selamat Siang';
+    elseif ($hour >= 15 && $hour < 18) $salam = 'Selamat Sore';
+    else $salam = 'Selamat Malam';
+@endphp
+
+<div class="greeting-card">
+    <h3>{{ $salam }}, {{ Auth::user()->name }}! 👋</h3>
+    <p>Kelola pengajuan cuti Anda dengan mudah dari sini.</p>
+    <div class="greeting-date">
+        <i class="fas fa-calendar-alt me-2"></i> {{ \Carbon\Carbon::now()->translatedFormat('l, d F Y') }}
     </div>
 </div>
 
@@ -24,12 +116,11 @@
                                     ->get(['id', 'name']);
 @endphp
 
-{{-- ========================================================== --}}
-{{-- 1. SECTION DELEGASI WEWENANG (Hanya muncul jika Atasan) --}}
-{{-- ========================================================== --}}
+{{-- ============================================================ --}}
+{{-- DELEGASI WEWENANG (Hanya muncul jika Atasan) --}}
+{{-- ============================================================ --}}
 @if($is_atasan)
 <div class="card border-0 mb-4 overflow-hidden position-relative">
-    {{-- Hiasan Background (Absrak) --}}
     <div style="position: absolute; top: 0; right: 0; width: 150px; height: 100%; background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(16, 124, 65, 0.1) 100%);"></div>
     
     <div class="card-body p-4">
@@ -89,15 +180,14 @@
 </div>
 @endif
 
-{{-- ========================================================== --}}
-{{-- 2. STATISTIC CARDS (Modern Gradient Style) --}}
-{{-- ========================================================== --}}
+{{-- ============================================================ --}}
+{{-- STAT CARDS --}}
+{{-- ============================================================ --}}
 <div class="row g-4 mb-4">
-    <div class="col-md-6 col-lg-3">
-        <div class="card h-100 text-white border-0" 
-             style="background: linear-gradient(135deg, #107c41 0%, #15803d 100%); position: relative; overflow: hidden;">
-             <i class="fas fa-calendar-check position-absolute" style="font-size: 5rem; top: 10px; right: -20px; opacity: 0.15;"></i>
-            
+    <div class="col-md-6 col-lg-3 animate-in">
+        <div class="card h-100 pegawai-stat" 
+             style="background: linear-gradient(135deg, #107c41 0%, #0a5c30 50%, #064020 100%);">
+            <i class="fas fa-calendar-check stat-icon-bg"></i>
             <div class="card-body position-relative z-1 p-4">
                 <h6 class="text-uppercase mb-2 text-white-50 small fw-bold">Hak Cuti Tahunan {{ $active_year }}</h6>
                 <div class="d-flex align-items-baseline">
@@ -111,11 +201,10 @@
         </div>
     </div>
 
-    <div class="col-md-6 col-lg-3">
-        <div class="card h-100 text-white border-0" 
-             style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); position: relative; overflow: hidden;">
-            <i class="fas fa-file-invoice position-absolute" style="font-size: 5rem; top: 10px; right: -20px; opacity: 0.15;"></i>
-            
+    <div class="col-md-6 col-lg-3 animate-in">
+        <div class="card h-100 pegawai-stat" 
+             style="background: linear-gradient(135deg, #1565c0 0%, #0d47a1 50%, #0a3880 100%);">
+            <i class="fas fa-file-invoice stat-icon-bg"></i>
             <div class="card-body position-relative z-1 p-4">
                 <h6 class="text-uppercase mb-2 text-white-50 small fw-bold">Sudah Dipakai</h6>
                 <div class="d-flex align-items-baseline">
@@ -129,11 +218,10 @@
         </div>
     </div>
 
-    <div class="col-md-6 col-lg-3">
-        <div class="card h-100 text-white border-0" 
-             style="background: linear-gradient(135deg, #d97706 0%, #b45309 100%); position: relative; overflow: hidden;">
-            <i class="fas fa-hourglass-half position-absolute" style="font-size: 5rem; top: 10px; right: -20px; opacity: 0.15;"></i>
-            
+    <div class="col-md-6 col-lg-3 animate-in">
+        <div class="card h-100 pegawai-stat" 
+             style="background: linear-gradient(135deg, #f57c00 0%, #e65100 50%, #bf360c 100%);">
+            <i class="fas fa-hourglass-half stat-icon-bg"></i>
             <div class="card-body position-relative z-1 p-4">
                 <h6 class="text-uppercase mb-2 text-white-50 small fw-bold">Sisa Kuota</h6>
                 <div class="d-flex align-items-baseline">
@@ -147,11 +235,10 @@
         </div>
     </div>
 
-    <div class="col-md-6 col-lg-3">
-        <div class="card h-100 text-white border-0" 
-             style="background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); position: relative; overflow: hidden;">
-            <i class="fas fa-clock position-absolute" style="font-size: 5rem; top: 10px; right: -20px; opacity: 0.15;"></i>
-            
+    <div class="col-md-6 col-lg-3 animate-in">
+        <div class="card h-100 pegawai-stat" 
+             style="background: linear-gradient(135deg, #dc2626 0%, #b91c1c 50%, #8e1414 100%);">
+            <i class="fas fa-clock stat-icon-bg"></i>
             <div class="card-body position-relative z-1 p-4">
                 <h6 class="text-uppercase mb-2 text-white-50 small fw-bold">Dalam Proses</h6>
                 <div class="d-flex align-items-baseline">
@@ -166,11 +253,24 @@
     </div>
 </div>
 
-{{-- ========================================================== --}}
-{{-- 3. BOTTOM SECTION (Pengumuman & Tabel) --}}
-{{-- ========================================================== --}}
+{{-- ============================================================ --}}
+{{-- CHART + INFORMASI + TABEL --}}
+{{-- ============================================================ --}}
 <div class="row g-4">
-    <div class="col-lg-5">
+    {{-- DONUT CHART: KUOTA CUTI --}}
+    <div class="col-lg-4">
+        <div class="card h-100 shadow-sm border-0">
+            <div class="card-header bg-white py-3 border-bottom">
+                <h6 class="fw-bold m-0 text-dark"><i class="fas fa-chart-pie me-2 text-primary"></i>Komposisi Kuota Cuti</h6>
+            </div>
+            <div class="card-body d-flex align-items-center justify-content-center">
+                <canvas id="cutiDonutChart" width="220" height="220"></canvas>
+            </div>
+        </div>
+    </div>
+
+    {{-- INFORMASI PENTING --}}
+    <div class="col-lg-4">
         <div class="card h-100 shadow-sm border-0">
             <div class="card-header bg-white py-3 border-bottom-0">
                 <h6 class="fw-bold m-0 text-dark"><i class="fas fa-bullhorn me-2 text-primary"></i>Informasi Penting</h6>
@@ -211,7 +311,8 @@
         </div>
     </div>
 
-    <div class="col-lg-7">
+    {{-- TABEL CUTI MENDATANG --}}
+    <div class="col-lg-4">
         <div class="card h-100 shadow-sm border-0">
             <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
                 <h6 class="fw-bold m-0 text-dark"><i class="fas fa-calendar-day me-2 text-primary"></i>Cuti Mendatang</h6>
@@ -225,7 +326,7 @@
                         <thead class="bg-light text-muted small text-uppercase">
                             <tr>
                                 <th class="ps-4 py-3 border-0">Tanggal</th>
-                                <th class="py-3 border-0">Jenis Cuti</th>
+                                <th class="py-3 border-0">Jenis</th>
                                 <th class="pe-4 py-3 border-0 text-end">Status</th>
                             </tr>
                         </thead>
@@ -268,4 +369,64 @@
     </div>
 </div>
 
+{{-- ============================================================ --}}
+{{-- CHART.JS - DONUT --}}
+{{-- ============================================================ --}}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('cutiDonutChart').getContext('2d');
+    
+    const terpakai = {{ $terpakai }};
+    const sisa = {{ $sisa_cuti }};
+    const menunggu = {{ $menunggu }};
+
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Terpakai', 'Sisa', 'Proses'],
+            datasets: [{
+                data: [terpakai, sisa, menunggu],
+                backgroundColor: [
+                    'rgba(21, 101, 192, 0.85)',
+                    'rgba(16, 124, 65, 0.85)',
+                    'rgba(220, 38, 38, 0.85)',
+                ],
+                borderColor: ['#1565c0', '#107c41', '#dc2626'],
+                borderWidth: 2,
+                hoverOffset: 8,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            cutout: '65%',
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        padding: 16,
+                        usePointStyle: true,
+                        pointStyle: 'circle',
+                        font: { size: 12, family: 'Poppins', weight: '500' },
+                        color: '#6b7280',
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0,0,0,0.8)',
+                    padding: 12,
+                    cornerRadius: 8,
+                    titleFont: { size: 13, weight: 'bold' },
+                    bodyFont: { size: 12 },
+                    callbacks: {
+                        label: function(context) {
+                            return ' ' + context.label + ': ' + context.raw + ' Hari';
+                        }
+                    }
+                }
+            }
+        }
+    });
+});
+</script>
 @endsection
