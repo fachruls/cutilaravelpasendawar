@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail; 
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 
 class PersetujuanController extends Controller
 {
@@ -218,12 +219,37 @@ class PersetujuanController extends Controller
             $updateData['catatan_pejabat'] = $alasan;
             $updateData['pejabat_berwenang'] = $user->name;
         }
-        $cuti->update($updateData);
+        
+        DB::beginTransaction();
+        try {
+            $cuti->update($updateData);
 
-        if ($cuti->jenis_cuti == 'Cuti Tahunan') {
-            $pemohon = $cuti->user;
-            $pemohon->cuti_n += $cuti->lama; 
-            $pemohon->save();
+            if ($cuti->jenis_cuti == 'Cuti Tahunan') {
+                $pemohon = User::where('id', $cuti->user_id)->lockForUpdate()->first();
+                $pemohon->cuti_n += $cuti->lama; 
+                
+                $hak_n = $pemohon->hak_cuti_tahunan ?? 12;
+                if ($pemohon->cuti_n > $hak_n) {
+                    $overflow_n = $pemohon->cuti_n - $hak_n;
+                    $pemohon->cuti_n = $hak_n;
+                    $pemohon->cuti_n1 += $overflow_n;
+                    
+                    if ($pemohon->cuti_n1 > 6) {
+                        $overflow_n1 = $pemohon->cuti_n1 - 6;
+                        $pemohon->cuti_n1 = 6;
+                        $pemohon->cuti_n2 += $overflow_n1;
+                        
+                        if ($pemohon->cuti_n2 > 6) {
+                            $pemohon->cuti_n2 = 6;
+                        }
+                    }
+                }
+                $pemohon->save();
+            }
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withErrors(['msg' => 'Terjadi kesalahan sistem saat menolak cuti.']);
         }
 
         AuditLog::create([

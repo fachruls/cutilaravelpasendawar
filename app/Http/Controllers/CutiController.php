@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
@@ -106,21 +107,24 @@ class CutiController extends Controller
         $hasil_hitung = $this->hitungHari($req_hitung)->getData();
         $lama = $hasil_hitung->hari_kerja; 
 
-        if ($request->jenis_cuti == 'Cuti Tahunan') {
-            $user = User::find(Auth::id());
-            
-            $saldo_n2 = (int) $user->cuti_n2; 
-            $saldo_n1 = (int) $user->cuti_n1; 
-            $saldo_n  = (int) $user->cuti_n;  
-            
-            $total_saldo = $saldo_n2 + $saldo_n1 + $saldo_n;
-            $sisa_permintaan = $lama; 
+        DB::beginTransaction();
+        try {
+            if ($request->jenis_cuti == 'Cuti Tahunan') {
+                $user = User::where('id', Auth::id())->lockForUpdate()->first();
+                
+                $saldo_n2 = (int) $user->cuti_n2; 
+                $saldo_n1 = (int) $user->cuti_n1; 
+                $saldo_n  = (int) $user->cuti_n;  
+                
+                $total_saldo = $saldo_n2 + $saldo_n1 + $saldo_n;
+                $sisa_permintaan = $lama; 
 
-            if ($lama > $total_saldo) {
-                return back()
-                    ->withErrors(['msg' => "Saldo tidak cukup! Total Saldo: $total_saldo, Permintaan: $lama hari."])
-                    ->withInput();
-            }
+                if ($lama > $total_saldo) {
+                    DB::rollBack();
+                    return back()
+                        ->withErrors(['msg' => "Saldo tidak cukup! Total Saldo: $total_saldo, Permintaan: $lama hari."])
+                        ->withInput();
+                }
 
             if ($sisa_permintaan > 0 && $saldo_n2 > 0) {
                 if ($sisa_permintaan >= $saldo_n2) {
@@ -168,7 +172,8 @@ class CutiController extends Controller
         $file_path = null;
         if ($request->hasFile('file_surat')) {
             $file = $request->file('file_surat');
-            $safeName = 'lampiran_' . time() . '_' . Str::random(10) . '.' . $file->getClientOriginalExtension();
+            // FIX: Gunakan ->extension() bawaan mimes Laravel bukan getClientOriginalExtension()
+            $safeName = 'lampiran_' . time() . '_' . Str::random(10) . '.' . $file->extension();
             $file_path = $file->storeAs('surat_cuti', $safeName, 'local'); 
         }
 
@@ -209,7 +214,13 @@ class CutiController extends Controller
             \Log::error("Email Error Kasubag: " . $e->getMessage());
         }
 
+        DB::commit();
         return redirect()->route('cuti.index')->with('success', 'Pengajuan berhasil! Menunggu verifikasi kepegawaian.');
+    } catch (\Exception $e) {
+        DB::rollBack();
+        \Log::error("Error Store Cuti: " . $e->getMessage());
+        return back()->withErrors(['msg' => 'Terjadi kesalahan sistem saat memproses cuti, silakan coba lagi.'])->withInput();
+    }
     }
 
     public function destroy($id)
@@ -227,7 +238,40 @@ class CutiController extends Controller
             Storage::disk('public')->delete($cuti->ttd_path);
         }
         
-        $cuti->delete();
+        DB::beginTransaction();
+        try {
+            // FIX: Pengembalian Kuota jika Cuti Dibatalkan
+            if ($cuti->jenis_cuti == 'Cuti Tahunan') {
+                $pemohon = User::where('id', Auth::id())->lockForUpdate()->first();
+                $pemohon->cuti_n += $cuti->lama;
+                
+                // Distribusi ulang sisa kuota ke N-1 dan N-2 jika meluap
+                $hak_n = $pemohon->hak_cuti_tahunan ?? 12;
+                if ($pemohon->cuti_n > $hak_n) {
+                    $overflow_n = $pemohon->cuti_n - $hak_n;
+                    $pemohon->cuti_n = $hak_n;
+                    $pemohon->cuti_n1 += $overflow_n;
+                    
+                    if ($pemohon->cuti_n1 > 6) {
+                        $overflow_n1 = $pemohon->cuti_n1 - 6;
+                        $pemohon->cuti_n1 = 6;
+                        $pemohon->cuti_n2 += $overflow_n1;
+                        
+                        // Limit N-2
+                        if ($pemohon->cuti_n2 > 6) {
+                            $pemohon->cuti_n2 = 6;
+                        }
+                    }
+                }
+                $pemohon->save();
+            }
+
+            $cuti->delete();
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withErrors(['msg' => 'Gagal membatalkan cuti, silakan coba lagi.']);
+        }
         
         AuditLog::create([
             'user_id' => Auth::id(),
