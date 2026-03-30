@@ -23,23 +23,23 @@
         
         <div class="content">
             
-            @if($tipe_notif == 'Pengajuan Baru')
-                <h3>Halo, Bapak/Ibu Atasan Langsung</h3>
+            @if(in_array($tipe_notif, ['kasubag', 'atasan']))
+                <h3>Halo, Bapak/Ibu</h3>
                 <h2 style="color: #0f6b3d;">📝 Pengajuan Cuti Baru</h2>
-                <p>Pegawai berikut telah mengajukan permohonan cuti dan menunggu persetujuan Anda.</p>
+                <p>Pegawai berikut telah mengajukan permohonan cuti dan menunggu tindak lanjut / persetujuan Anda.</p>
 
-            @elseif($tipe_notif == 'Butuh Persetujuan Ketua')
+            @elseif($tipe_notif == 'ketua')
                 <h3>Halo, Bapak/Ibu Ketua</h3>
                 <h2 style="color: #0f6b3d;">⚖️ Verifikasi Lanjutan</h2>
-                <p>Pengajuan cuti ini telah disetujui oleh Atasan Langsung dan menunggu persetujuan/tanda tangan akhir dari Anda.</p>
+                <p>Pengajuan cuti ini telah disetujui dan menunggu persetujuan/tanda tangan akhir dari Anda.</p>
 
-            @elseif($tipe_notif == 'Cuti Disetujui')
-                <h3>Halo, {{ $namaPegawai }}</h3>
+            @elseif($tipe_notif == 'disetujui')
+                <h3>Halo, {{ $cuti->user->name ?? 'Pegawai' }}</h3>
                 <h2 style="color: #198754;">✅ Cuti Disetujui!</h2>
                 <p>Selamat! Pengajuan cuti Anda telah disetujui sepenuhnya dan Surat Cuti telah diterbitkan.</p>
 
-            @elseif($tipe_notif == 'Cuti Ditolak')
-                <h3>Halo, {{ $namaPegawai }}</h3>
+            @elseif($tipe_notif == 'ditolak')
+                <h3>Halo, {{ $cuti->user->name ?? 'Pegawai' }}</h3>
                 <h2 style="color: #dc3545;">❌ Pengajuan Ditolak</h2>
                 <p>Mohon maaf, pengajuan cuti Anda belum dapat disetujui saat ini.</p>
             @endif
@@ -48,7 +48,7 @@
                 <table style="width: 100%; border-collapse: collapse;">
                     <tr>
                         <td style="padding: 5px 0; width: 120px; color: #666;"><strong>Nama Pegawai</strong></td>
-                        <td style="padding: 5px 0;">: {{ $namaPegawai }}</td>
+                        <td style="padding: 5px 0;">: {{ $cuti->user->name ?? 'Pegawai' }}</td>
                     </tr>
                     <tr>
                         <td style="padding: 5px 0; color: #666;"><strong>Jenis Cuti</strong></td>
@@ -69,14 +69,14 @@
                 </table>
             </div>
             
-            @if($tipe_notif == 'Pengajuan Baru' || $tipe_notif == 'Butuh Persetujuan Ketua')
+            @if(in_array($tipe_notif, ['kasubag', 'atasan', 'ketua']))
                 <div style="text-align: center;">
                     <p>Silakan login ke aplikasi untuk melihat detail dan melakukan tanda tangan digital.</p>
                     <a href="{{ route('login') }}" class="btn">Login & Proses Cuti</a>
                 </div>
             @endif
 
-            @if($tipe_notif == 'Cuti Disetujui')
+            @if($tipe_notif == 'disetujui')
                 <div style="text-align: center;">
                     <a href="{{ route('login') }}" class="btn">Login & Unduh Surat</a>
                 </div>

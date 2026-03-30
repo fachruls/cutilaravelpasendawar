@@ -155,10 +155,6 @@ class PegawaiController extends Controller
     {
         $pegawai = User::findOrFail($id);
 
-        if (Cuti::where('user_id', $id)->exists()) {
-            return back()->withErrors(['msg' => 'Gagal hapus: Pegawai memiliki riwayat cuti.']);
-        }
-
         $nama = $pegawai->name;
         $pegawai->delete();
 

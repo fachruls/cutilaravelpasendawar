@@ -8,6 +8,7 @@ use App\Models\HariLibur;
 use App\Models\AuditLog;
 use App\Models\User;
 use App\Mail\NotifikasiCuti;
+use App\Notifications\CutiNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
@@ -204,14 +205,17 @@ class CutiController extends Controller
             'user_agent' => $request->header('User-Agent'),
         ]);
 
-        // FITUR BARU: Notifikasi ke Kasubag
+        // FITUR BARU: Notifikasi ke Kasubag via Email queue & In-App
         try {
             $kasubag = User::where('role', 'kasubag')->first();
-            if ($kasubag && $kasubag->email) {
-                Mail::to($kasubag->email)->send(new NotifikasiCuti($cuti, 'kasubag'));
+            if ($kasubag) {
+                if ($kasubag->email) {
+                    Mail::to($kasubag->email)->send(new NotifikasiCuti($cuti, 'kasubag'));
+                }
+                $kasubag->notify(new CutiNotification($cuti, 'kasubag', 'Pegawai ' . Auth::user()->name . ' mengajukan cuti baru.'));
             }
         } catch (\Exception $e) {
-            \Log::error("Email Error Kasubag: " . $e->getMessage());
+            \Log::error("Email/Notif Error Kasubag: " . $e->getMessage());
         }
 
         DB::commit();

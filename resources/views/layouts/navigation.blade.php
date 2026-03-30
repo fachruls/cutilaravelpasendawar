@@ -41,6 +41,33 @@
             </div>
 
             <div class="hidden sm:flex sm:items-center sm:ms-6">
+                <!-- Notifications Dropdown -->
+                <x-dropdown align="right" width="64">
+                    <x-slot name="trigger">
+                        <button class="relative inline-flex items-center p-2 mr-2 border border-transparent text-sm leading-4 font-medium rounded-full text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+                            </svg>
+                            @if(Auth::user()->unreadNotifications->count() > 0)
+                                <span class="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/4 -translate-y-1/4 bg-red-600 rounded-full">{{ Auth::user()->unreadNotifications->count() }}</span>
+                            @endif
+                        </button>
+                    </x-slot>
+
+                    <x-slot name="content">
+                        <div class="p-2 border-b border-gray-100 font-semibold text-gray-700">Notifikasi</div>
+                        @forelse(Auth::user()->unreadNotifications->take(5) as $notification)
+                            <a href="#" class="block px-4 py-3 hover:bg-gray-50 transition duration-150 ease-in-out">
+                                <p class="text-sm font-medium text-gray-800">{{ $notification->data['pesan'] ?? 'Notifikasi Baru' }}</p>
+                                <p class="text-xs text-gray-500 mt-1">{{ \Carbon\Carbon::parse($notification->created_at)->diffForHumans() }}</p>
+                            </a>
+                        @empty
+                            <div class="px-4 py-3 text-sm text-gray-500 text-center">Belum ada notifikasi baru.</div>
+                        @endforelse
+                    </x-slot>
+                </x-dropdown>
+
+                <!-- User Profile Dropdown -->
                 <x-dropdown align="right" width="48">
                     <x-slot name="trigger">
                         <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">

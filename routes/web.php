@@ -49,8 +49,8 @@ Route::get('/dashboard', [DashboardController::class, 'index'])
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
     Route::resource('pegawai', PegawaiController::class);
-    Route::resource('jenis-cuti', JenisCutiController::class)->except(['show']);
-    Route::resource('hari-libur', HariLiburController::class)->except(['show']);
+    Route::resource('jenis-cuti', JenisCutiController::class)->except(['show', 'create', 'edit']);
+    Route::resource('hari-libur', HariLiburController::class)->except(['show', 'create', 'edit']);
     Route::get('/audit-trail', [AuditController::class, 'index'])->name('audit');
     Route::get('/kalender', [AdminDashboardController::class, 'kalender'])->name('kalender');
     Route::get('/cuti/{id}/cetak-formulir', [CetakController::class, 'formulir'])->name('cuti.cetak_formulir');

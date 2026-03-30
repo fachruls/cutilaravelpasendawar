@@ -6,6 +6,7 @@ use App\Models\Cuti;
 use App\Models\User;
 use App\Models\AuditLog;
 use App\Mail\NotifikasiCuti; 
+use App\Notifications\CutiNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail; 
@@ -74,8 +75,9 @@ class PersetujuanController extends Controller
         $is_plh_action = false;
         $pesan = '';
 
-        $target_email = null;
+        $target_user = null;
         $tipe_notif = '';
+        $pesan_notif = '';
 
         // LOGIKA BARU: PLH Kasubag bisa menyetujui
         $kasubag_asli = User::where('role', 'kasubag')->first();
@@ -87,9 +89,10 @@ class PersetujuanController extends Controller
             $action = 'VERIFIKASI_KASUBAG';
 
             $atasan = User::find($cuti->user->atasan_id);
-            if ($atasan && $atasan->email) {
-                $target_email = $atasan->email;
+            if ($atasan) {
+                $target_user = $atasan;
                 $tipe_notif = 'atasan';
+                $pesan_notif = "Verifikasi Kasubag Selesai. Mohon ACC Cuti dari {$cuti->user->name}.";
             }
         }
         
@@ -116,9 +119,10 @@ class PersetujuanController extends Controller
                 $pesan = "Disetujui Langsung oleh Ketua.";
                 $action = 'PERSETUJUAN_FINAL_BYPASS';
 
-                if ($cuti->user->email) {
-                    $target_email = $cuti->user->email;
+                if ($cuti->user) {
+                    $target_user = $cuti->user;
                     $tipe_notif = 'disetujui';
+                    $pesan_notif = "Selamat! Pengajuan cuti Anda telah disetujui penuh.";
                 }
             } 
             else {
@@ -133,9 +137,10 @@ class PersetujuanController extends Controller
                 $action = 'PERSETUJUAN_ATASAN';
 
                 $ketua = User::where('role', 'pimpinan')->first();
-                if ($ketua && $ketua->email) {
-                    $target_email = $ketua->email;
+                if ($ketua) {
+                    $target_user = $ketua;
                     $tipe_notif = 'ketua';
+                    $pesan_notif = "Persetujuan final dibutuhkan untuk cuti {$cuti->user->name}.";
                 }
             }
         }
@@ -157,9 +162,10 @@ class PersetujuanController extends Controller
             $pesan = "Cuti RESMI DISETUJUI.";
             $action = 'PERSETUJUAN_FINAL';
 
-            if ($cuti->user->email) {
-                $target_email = $cuti->user->email;
+            if ($cuti->user) {
+                $target_user = $cuti->user;
                 $tipe_notif = 'disetujui';
+                $pesan_notif = "Selamat! Pengajuan cuti Anda telah disetujui penuh oleh Ketua.";
             }
         }
         else {
@@ -174,11 +180,14 @@ class PersetujuanController extends Controller
             'user_agent' => $request->header('User-Agent'),
         ]);
 
-        if ($target_email && $tipe_notif) {
+        if ($target_user && $tipe_notif) {
             try {
-                Mail::to($target_email)->send(new NotifikasiCuti($cuti, $tipe_notif));
+                if ($target_user->email) {
+                    Mail::to($target_user->email)->send(new NotifikasiCuti($cuti, $tipe_notif));
+                }
+                $target_user->notify(new CutiNotification($cuti, $tipe_notif, $pesan_notif));
             } catch (\Exception $e) {
-                \Log::error("Gagal kirim email notifikasi ($tipe_notif): " . $e->getMessage());
+                \Log::error("Gagal kirim notif/email ($tipe_notif): " . $e->getMessage());
             }
         }
 
@@ -261,8 +270,11 @@ class PersetujuanController extends Controller
         ]);
 
         try {
-            if ($cuti->user->email) {
-                Mail::to($cuti->user->email)->send(new NotifikasiCuti($cuti, 'ditolak'));
+            if ($cuti->user) {
+                if ($cuti->user->email) {
+                    Mail::to($cuti->user->email)->send(new NotifikasiCuti($cuti, 'ditolak'));
+                }
+                $cuti->user->notify(new CutiNotification($cuti, 'ditolak', "Mohon Maaf, Pengajuan Cuti Anda Ditolak. Alasan: $alasan"));
             }
         } catch (\Exception $e) {
             \Log::error("Gagal kirim email penolakan: " . $e->getMessage());
