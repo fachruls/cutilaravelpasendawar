@@ -1,8 +1,11 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="greeting mt-3 mb-4">
-    <h4><i class="fas fa-calendar-day me-2"></i>Manajemen Hari Libur Nasional</h4>
+<div style="background: linear-gradient(135deg, #107c41 0%, #0a5c30 50%, #064020 100%); border-radius: 20px; padding: 24px 30px; color: white; position: relative; overflow: hidden; margin-bottom: 24px; box-shadow: 0 8px 30px rgba(16, 124, 65, 0.25);">
+    <div style="position: absolute; top: -40px; right: -40px; width: 180px; height: 180px; border-radius: 50%; background: rgba(255,255,255,0.06);"></div>
+    <i class="fas fa-calendar-day" style="position: absolute; right: 30px; top: 50%; transform: translateY(-50%); font-size: 4rem; opacity: 0.1;"></i>
+    <h4 class="fw-bold m-0" style="position: relative; z-index: 1;"><i class="fas fa-calendar-day me-2"></i>Manajemen Hari Libur Nasional</h4>
+    <p class="m-0 mt-1" style="opacity: 0.85; font-size: 0.9rem; position: relative; z-index: 1;">Atur tanggal libur nasional untuk perhitungan cuti otomatis.</p>
 </div>
 
 @if(session('success'))
@@ -74,7 +77,7 @@
                                     <span class="fw-bold">{{ \Carbon\Carbon::parse($hl->tanggal)->translatedFormat('d F Y') }}</span><br>
                                     <small class="text-muted">{{ \Carbon\Carbon::parse($hl->tanggal)->translatedFormat('l') }}</small>
                                 </td>
-                                <td>{{ $hl->keterangan }}</td>
+                                <td>{{ $hl->nama }}</td>
                                 <td class="text-center">
                                     <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editModal{{ $hl->id }}">
                                         <i class="fas fa-edit"></i>
@@ -104,7 +107,7 @@
                                                 </div>
                                                 <div class="mb-3">
                                                     <label>Keterangan</label>
-                                                    <input type="text" class="form-control" name="keterangan" value="{{ $hl->keterangan }}" required>
+                                                    <input type="text" class="form-control" name="keterangan" value="{{ $hl->nama }}" required>
                                                 </div>
                                             </div>
                                             <div class="modal-footer">

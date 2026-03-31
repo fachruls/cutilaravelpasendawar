@@ -231,8 +231,8 @@ class CutiController extends Controller
     {
         $cuti = Cuti::where('id', $id)->where('user_id', Auth::id())->firstOrFail();
         
-        if ($cuti->status == 'Disetujui' || $cuti->status == 'Ditolak') {
-            return back()->withErrors(['msg' => 'Pengajuan yang sudah selesai tidak bisa dibatalkan.']);
+        if ($cuti->status == 'Ditolak') {
+            return back()->withErrors(['msg' => 'Pengajuan yang ditolak tidak bisa dibatalkan.']);
         }
         
         if ($cuti->file_surat && Storage::disk('local')->exists($cuti->file_surat)) {

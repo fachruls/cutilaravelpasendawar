@@ -123,6 +123,10 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     Route::post('/profile/upload-ttd', [ProfileController::class, 'uploadTtd'])->name('profile.upload_ttd');
     Route::post('/set-plh', [DashboardController::class, 'updatePlh'])->name('plh.update');
+    Route::get('/notifications/read-all', function() {
+        Auth::user()->unreadNotifications->markAsRead();
+        return back();
+    })->name('notifications.read_all');
 });
 
 require __DIR__.'/auth.php';

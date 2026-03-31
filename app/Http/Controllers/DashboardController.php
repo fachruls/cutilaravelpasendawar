@@ -27,7 +27,17 @@ class DashboardController extends Controller
                 'cuti_disetujui'=> Cuti::where('status', 'Disetujui')->count(),
             ];
             $cuti_terbaru = Cuti::with('user')->orderBy('created_at', 'desc')->limit(5)->get();
-            return view('admin.dashboard', compact('stats', 'cuti_terbaru'));
+            
+            // ANALYTICS TREN CUTI PER BULAN TAHUN INI
+            $tahunHitung = date('Y');
+            $dataBulan = array_fill(0, 12, 0);
+            $cutiThnIni = Cuti::whereYear('tanggal_mulai', $tahunHitung)->get();
+            foreach($cutiThnIni as $c) {
+                $bulanIdx = (int) Carbon::parse($c->tanggal_mulai)->format('n') - 1;
+                $dataBulan[$bulanIdx]++;
+            }
+
+            return view('admin.dashboard', compact('stats', 'cuti_terbaru', 'dataBulan', 'tahunHitung'));
         } 
         
         // 2. DASHBOARD PIMPINAN & KASUBAG (DIGABUNG)
@@ -48,7 +58,16 @@ class DashboardController extends Controller
             $ditolak = Cuti::where('status', 'Ditolak')->count();
             $cuti_terbaru = Cuti::with('user')->orderBy('created_at', 'desc')->limit(5)->get();
             
-            return view('pimpinan.dashboard', compact('total_cuti', 'menunggu', 'disetujui', 'ditolak', 'cuti_terbaru'));
+            // ANALYTICS TREN CUTI PER BULAN TAHUN INI
+            $tahunHitung = date('Y');
+            $dataBulan = array_fill(0, 12, 0);
+            $cutiThnIni = Cuti::whereYear('tanggal_mulai', $tahunHitung)->get();
+            foreach($cutiThnIni as $c) {
+                $bulanIdx = (int) Carbon::parse($c->tanggal_mulai)->format('n') - 1;
+                $dataBulan[$bulanIdx]++;
+            }
+
+            return view('pimpinan.dashboard', compact('total_cuti', 'menunggu', 'disetujui', 'ditolak', 'cuti_terbaru', 'dataBulan', 'tahunHitung'));
         }
 
         // 3. DASHBOARD PEGAWAI (SOLUSI HITUNG MANUAL)
@@ -112,9 +131,23 @@ class DashboardController extends Controller
     {
         $user = Auth::user();
         
+        // SECURITY FIX: Hanya pimpinan, kasubag, atau atasan yang punya bawahan boleh set PLH
+        $is_atasan = User::where('atasan_id', $user->id)->exists();
+        if (!in_array($user->role, ['pimpinan', 'kasubag']) && !$is_atasan) {
+            abort(403, 'Anda tidak memiliki akses untuk menunjuk Pelaksana Harian.');
+        }
+
         // Validasi: Plh tidak boleh diri sendiri
         if($request->plh_id == $user->id) {
             return back()->with('error', 'Tidak bisa menunjuk diri sendiri sebagai Plh.');
+        }
+
+        // Validasi: Plh harus pegawai yang valid (bukan admin)
+        if ($request->plh_id) {
+            $plh_user = User::find($request->plh_id);
+            if (!$plh_user || $plh_user->role == 'admin') {
+                return back()->with('error', 'User yang dipilih tidak valid sebagai Plh.');
+            }
         }
 
         // Update PLH (set null jika kosong)

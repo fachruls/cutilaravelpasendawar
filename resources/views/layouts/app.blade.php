@@ -378,6 +378,39 @@
                 </div>
                 <h3>E-CUTI PAS</h3>
             </div>
+            
+            {{-- BELL NOTIFIKASI DI HEADER --}}
+            <div class="dropdown">
+                <button class="btn btn-link text-white text-decoration-none position-relative p-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-bell fs-5"></i>
+                    @if(Auth::user()->unreadNotifications->count() > 0)
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger shadow-sm border border-white" style="font-size: 0.55rem; padding: 0.25em 0.4em;">
+                            {{ Auth::user()->unreadNotifications->count() }}
+                        </span>
+                    @endif
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 mt-2 p-0" style="width: 320px; border-radius: 12px; overflow: hidden; z-index: 1050;">
+                    <li class="bg-light px-3 py-2 border-bottom d-flex justify-content-between align-items-center">
+                        <span class="fw-bold text-dark" style="font-size: 0.85rem;">Notifikasi Baru</span>
+                        @if(Auth::user()->unreadNotifications->count() > 0)
+                            <a href="{{ route('notifications.read_all') }}" class="text-primary text-decoration-none" style="font-size: 0.75rem;">Tandai Dibaca</a>
+                        @endif
+                    </li>
+                    <div style="max-height: 300px; overflow-y: auto;">
+                        @forelse(Auth::user()->unreadNotifications->take(6) as $notification)
+                            <li>
+                                <a class="dropdown-item py-2 px-3 border-bottom text-wrap" href="#">
+                                    <div class="fw-bold mb-1" style="font-size: 0.8rem; color: #107c41;">{{ $notification->data['nama_pegawai'] ?? 'Sistem e-Cuti' }}</div>
+                                    <div style="font-size: 0.8rem; color: #4b5563; line-height: 1.3;">{{ $notification->data['pesan'] ?? 'Ada rekam aktivitas baru di sistem.' }}</div>
+                                    <div class="text-muted mt-1" style="font-size: 0.7rem;"><i class="fas fa-clock me-1"></i>{{ \Carbon\Carbon::parse($notification->created_at)->diffForHumans() }}</div>
+                                </a>
+                            </li>
+                        @empty
+                            <li><div class="px-3 py-4 text-center text-muted" style="font-size: 0.85rem;"><i class="fas fa-check-circle me-1 text-success opacity-50"></i> Belum ada notifikasi baru.</div></li>
+                        @endforelse
+                    </div>
+                </ul>
+            </div>
         </div>
 
         <div class="container-fluid p-0">

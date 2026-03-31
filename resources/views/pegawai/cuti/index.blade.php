@@ -104,15 +104,18 @@
                                         <a href="{{ route('cuti.cetak', $c->id) }}" target="_blank" class="btn btn-outline-primary btn-sm rounded-circle" title="Cetak Surat" style="width: 32px; height: 32px; padding: 0; display: flex; align-items: center; justify-content: center;">
                                             <i class="fas fa-print"></i>
                                         </a>
+                                        <a href="{{ route('cuti.cetak', ['id' => $c->id, 'download' => 1]) }}" class="btn btn-outline-success btn-sm rounded-circle" title="Download PDF" style="width: 32px; height: 32px; padding: 0; display: flex; align-items: center; justify-content: center;">
+                                            <i class="fas fa-file-download"></i>
+                                        </a>
                                     @else
                                         <button class="btn btn-light text-muted btn-sm rounded-circle border" disabled style="width: 32px; height: 32px; padding: 0;">
                                             <i class="fas fa-print"></i>
                                         </button>
                                     @endif
 
-                                    {{-- FITUR BATAL: Hanya jika masih Menunggu --}}
-                                    @if(str_contains($c->status, 'Menunggu'))
-                                        <form action="{{ route('cuti.destroy', $c->id) }}" method="POST" onsubmit="return confirm('Yakin ingin membatalkan pengajuan ini? Data akan dihapus permanen.');">
+                                    {{-- FITUR BATAL: Tersedia selama Belum Ditolak --}}
+                                    @if(!str_contains($c->status, 'Ditolak'))
+                                        <form action="{{ route('cuti.destroy', $c->id) }}" method="POST" onsubmit="return confirm('Yakin ingin membatalkan pengajuan ini? Saldo hari akan dikembalikan ke akun Anda.');">
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="btn btn-outline-danger btn-sm rounded-circle" title="Batalkan Pengajuan" style="width: 32px; height: 32px; padding: 0; display: flex; align-items: center; justify-content: center;">

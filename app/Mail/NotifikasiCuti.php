@@ -22,27 +22,17 @@ class NotifikasiCuti extends Mailable implements ShouldQueue
 
     public function build()
     {
-        $subject = '[E-CUTI] Notifikasi Baru';
+        $nama = $this->cuti->user->name ?? 'Pegawai';
 
-        switch ($this->tipe_notif) {
-            case 'kasubag':
-                $subject = '[E-CUTI] 📝 Pengajuan Cuti Baru Menunggu Verifikasi';
-                break;
-            case 'atasan':
-                $subject = '[E-CUTI] ⏳ Permohonan Cuti Bawahan Menunggu Persetujuan';
-                break;
-            case 'ketua':
-                $subject = '[E-CUTI] ⚖️ Permohonan Cuti Menunggu Penetapan Ketua';
-                break;
-            case 'disetujui':
-                $subject = '[E-CUTI] ✅ Hore! Pengajuan Cuti Anda DISETUJUI';
-                break;
-            case 'ditolak':
-                $subject = '[E-CUTI] ❌ Mohon Maaf, Pengajuan Cuti DITOLAK';
-                break;
-        }
+        $subject = match ($this->tipe_notif) {
+            'kasubag'   => "[E-CUTI PA Sendawar] Pengajuan Cuti Baru — $nama — Menunggu Verifikasi Kepegawaian",
+            'atasan'    => "[E-CUTI PA Sendawar] Permohonan Cuti $nama — Menunggu Persetujuan Atasan",
+            'ketua'     => "[E-CUTI PA Sendawar] Penetapan Akhir Cuti $nama — Menunggu Tanda Tangan Ketua",
+            'disetujui' => "[E-CUTI PA Sendawar] Cuti Anda Telah DISETUJUI — Surat Cuti Diterbitkan",
+            'ditolak'   => "[E-CUTI PA Sendawar] Pengajuan Cuti Anda DITOLAK",
+            default     => "[E-CUTI PA Sendawar] Notifikasi Cuti Pegawai",
+        };
 
-        // Pastikan view 'emails.notifikasi_cuti' sudah ada (dari kode sebelumnya)
         return $this->subject($subject)->view('emails.notifikasi_cuti');
     }
 }

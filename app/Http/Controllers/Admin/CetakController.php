@@ -74,6 +74,10 @@ class CetakController extends Controller
 
         $namaFile = 'Formulir_Cuti_' . str_replace(' ', '_', $cuti->user->name) . '_' . $cuti->tanggal_mulai . '.pdf';
 
+        if (request()->has('download')) {
+            return $pdf->download($namaFile);
+        }
+
         return $pdf->stream($namaFile);
     }
 }

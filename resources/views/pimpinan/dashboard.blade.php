@@ -225,11 +225,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const ctx = document.getElementById('cutiChartPimpinan').getContext('2d');
     const labels = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
 
-    const dataBulan = new Array(12).fill(0);
-    @foreach($cuti_terbaru as $c)
-        @php $bi = (int) \Carbon\Carbon::parse($c->tanggal_mulai)->format('n') - 1; @endphp
-        dataBulan[{{ $bi }}]++;
-    @endforeach
+    const dataBulan = @json($dataBulan);
     const hasData = dataBulan.some(v => v > 0);
 
     new Chart(ctx, {

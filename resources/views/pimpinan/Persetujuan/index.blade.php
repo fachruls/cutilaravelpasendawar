@@ -365,8 +365,11 @@
                         <div class="col-6">
                             <label class="text-muted small fw-bold text-uppercase" style="font-size: 0.7rem;">Lampiran</label>
                             <div>
-                                <a href="{{ route('cuti.cetak', $item->id) }}" class="btn btn-sm btn-outline-primary rounded-pill" target="_blank">
-                                    <i class="fas fa-file-pdf me-1"></i> Lihat Dokumen
+                                <a href="{{ route('cuti.cetak', $item->id) }}" class="btn btn-sm btn-outline-primary rounded-pill mb-1" target="_blank">
+                                    <i class="fas fa-print me-1"></i> Cetak Dokumen
+                                </a>
+                                <a href="{{ route('cuti.cetak', ['id' => $item->id, 'download' => 1]) }}" class="btn btn-sm btn-outline-success rounded-pill">
+                                    <i class="fas fa-file-download me-1"></i> Download PDF
                                 </a>
                             </div>
                         </div>

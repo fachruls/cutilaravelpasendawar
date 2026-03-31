@@ -59,10 +59,11 @@ class PegawaiController extends Controller
             'email' => $request->email,
             'nip' => $request->nip,
             'username' => $request->username,
-            'password' => $request->password, 
+            'password' => Hash::make($request->password), 
             'role' => $request->role,
             'jabatan' => $request->jabatan,
             'unit_kerja' => 'Pengadilan Agama Sendawar',
+            'tmt_masuk' => $request->tmt_masuk,
             'tmt_jabatan' => $request->tmt_jabatan,
             'golongan' => $request->golongan,
             'no_hp' => $request->no_hp,
@@ -134,7 +135,7 @@ class PegawaiController extends Controller
             $request->validate([
                 'password_baru' => 'min:6'
             ]);
-            $data['password'] = $request->password_baru;
+            $data['password'] = Hash::make($request->password_baru);
         }
 
         $pegawai->update($data);

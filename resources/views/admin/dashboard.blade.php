@@ -259,15 +259,9 @@
 document.addEventListener('DOMContentLoaded', function() {
     const ctx = document.getElementById('cutiChart').getContext('2d');
 
-    // Data dari blade (pure frontend, tanpa ubah backend)
+    // Data dari backend
     const bulanLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
-    
-    // Parse data cuti terbaru untuk mendapatkan distribusi per bulan
-    const dataBulan = new Array(12).fill(0);
-    @foreach($cuti_terbaru as $c)
-        @php $bulanIdx = (int) \Carbon\Carbon::parse($c->tanggal_mulai)->format('n') - 1; @endphp
-        dataBulan[{{ $bulanIdx }}]++;
-    @endforeach
+    const dataBulan = @json($dataBulan);
 
     // Jika tidak ada data, tampilkan data dummy agar chart tidak kosong
     const hasData = dataBulan.some(v => v > 0);
